@@ -15,8 +15,11 @@ mongoose.connect(url)
 
 //Mongoose Convention - Schemas refer to the name of the collection in the singular
 const noteSchema = new mongoose.Schema({
-    content: String,
-    date: Date,
+    content: {
+        type: String,
+        minLength: 5,
+        required: true
+    },
     important: Boolean,
 })
 
