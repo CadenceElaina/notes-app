@@ -1,5 +1,12 @@
 const config = require('./utils/config')
 const express = require('express')
+require('express-async-errors')
+/*
+express-async-errors
+The 'magic' of the library allows us to eliminate the try-catch blocks completely.
+Because of the library, we do not need the next(exception) call anymore. 
+The library handles everything under the hood. If an exception occurs in an async route, the execution is automatically passed to the error handling middleware.
+*/
 const app = express()
 const cors = require('cors')
 const notesRouter = require('./controllers/notes')

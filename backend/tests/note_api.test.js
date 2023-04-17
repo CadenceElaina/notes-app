@@ -1,31 +1,23 @@
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const helper = require('./test_helper')
 const app = require('../app')
 const api = supertest(app)
 const Note = require('../models/note')
 
-const initialNotes = [
-  {
-    content: 'HTML is easy',
-    important: false,
-  },
-  {
-    content: 'Browser can execute only JavaScript',
-    important: true,
-  },
-]
-
 beforeEach(async () => {
   await Note.deleteMany({})
-  let noteObject = new Note(initialNotes[0])
-  await noteObject.save()
-  noteObject = new Note(initialNotes[1])
-  await noteObject.save()
+
+  const noteObjects = helper.initialNotes
+    .map(note => new Note(note))
+  const promiseArray = noteObjects.map(note => note.save()) // array of promises for saving each of the items to the DB
+  await Promise.all(promiseArray)
+  //https://fullstackopen.com/en/part4/testing_the_backend#error-handling-and-async-await
+  //wait for all of the asynchronous operations to finish to prevent executing tests before DB state is initialized
 }, 100000)
-//note my internet is trash so the ,100000 appears to be necessary for each to prevent timeout
-//insane I live within 20 miles of a major city in the US and I have access to only one internet provider and it offers speeds up to 10mbs at best and is incredibly unreliable... sigh
-//temporary of course... I will get a new place soon 
+
 test('notes are returned as json', async () => {
+  console.log('entered test')
   await api
     .get('/api/notes')
     .expect(200)
@@ -38,7 +30,7 @@ test('notes are returned as json', async () => {
 test('all notes are returned', async () => {
   const response = await api.get('/api/notes')
 
-  expect(response.body).toHaveLength(initialNotes.length)
+  expect(response.body).toHaveLength(helper.initialNotes.length)
 }, 100000)
 
 test('a specific note is within the returned notes', async () => {
@@ -49,6 +41,76 @@ test('a specific note is within the returned notes', async () => {
     'Browser can execute only JavaScript'
   )
 }, 100000)
+
+test('a valid note can be added', async () => {
+  const newNote = {
+    content: 'async/await simplifies making async calls',
+    important: true,
+  }
+
+  await api
+    .post('/api/notes')
+    .send(newNote)
+    .expect(201)
+    .expect('Content-Type', /application\/json/)
+
+  const notesAtEnd = await helper.notesInDb()
+  expect(notesAtEnd).toHaveLength(helper.initialNotes.length + 1)
+
+  const contents = notesAtEnd.map(n => n.content)
+  expect(contents).toContain(
+    'async/await simplifies making async calls'
+  )
+}, 100000)
+
+test('note without content is not added', async () => {
+  const newNote = {
+    important: true
+  }
+
+  await api
+    .post('/api/notes')
+    .send(newNote)
+    .expect(400)
+
+  const notesAtEnd = await helper.notesInDb()
+
+  expect(notesAtEnd).toHaveLength(helper.initialNotes.length)
+})
+
+test('a specific note can be viewed', async () => {
+  const notesAtStart = await helper.notesInDb()
+
+  const noteToView = notesAtStart[0]
+
+  const resultNote = await api
+    .get(`/api/notes/${noteToView.id}`)
+    .expect(200)
+    .expect('Content-Type', /application\/json/)
+
+  //const processedNoteToView = JSON.parse(JSON.stringify(noteToView))
+
+  expect(resultNote.body).toEqual(noteToView)
+})
+
+test('a note can be deleted', async () => {
+  const notesAtStart = await helper.notesInDb()
+  const noteToDelete = notesAtStart[0]
+
+  await api
+    .delete(`/api/notes/${noteToDelete.id}`)
+    .expect(204)
+
+  const notesAtEnd = await helper.notesInDb()
+
+  expect(notesAtEnd).toHaveLength(
+    helper.initialNotes.length - 1
+  )
+
+  const contents = notesAtEnd.map(r => r.content)
+
+  expect(contents).not.toContain(noteToDelete.content)
+})
 
 afterAll(async () => {
   await mongoose.connection.close()
