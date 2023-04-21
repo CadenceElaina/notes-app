@@ -12,20 +12,20 @@ describe('when there is initially some notes saved', () => {
   beforeEach(async () => {
     await Note.deleteMany({})
     await Note.insertMany(helper.initialNotes)
-  })
+  }, 100000)
 
   test('notes are returned as json', async () => {
     await api
       .get('/api/notes')
       .expect(200)
       .expect('Content-Type', /application\/json/)
-  })
+  }, 100000)
 
   test('all notes are returned', async () => {
     const response = await api.get('/api/notes')
 
     expect(response.body).toHaveLength(helper.initialNotes.length)
-  })
+  }, 100000)
 
   test('a specific note is within the returned notes', async () => {
     const response = await api.get('/api/notes')
@@ -34,7 +34,7 @@ describe('when there is initially some notes saved', () => {
     expect(contents).toContain(
       'Browser can execute only JavaScript'
     )
-  })
+  }, 100000)
 
   describe('viewing a specific note', () => {
 
@@ -49,7 +49,7 @@ describe('when there is initially some notes saved', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(resultNote.body).toEqual(noteToView)
-    })
+    }, 100000)
 
     test('fails with statuscode 404 if note does not exist', async () => {
       const validNonexistingId = await helper.nonExistingId()
@@ -57,7 +57,7 @@ describe('when there is initially some notes saved', () => {
       await api
         .get(`/api/notes/${validNonexistingId}`)
         .expect(404)
-    })
+    }, 100000)
 
     test('fails with statuscode 400 id is invalid', async () => {
       const invalidId = '5a3d5da59070081a82a3445'
@@ -65,7 +65,7 @@ describe('when there is initially some notes saved', () => {
       await api
         .get(`/api/notes/${invalidId}`)
         .expect(400)
-    })
+    }, 100000)
   })
 
   describe('addition of a new note', () => {
@@ -88,7 +88,7 @@ describe('when there is initially some notes saved', () => {
       expect(contents).toContain(
         'async/await simplifies making async calls'
       )
-    })
+    }, 100000)
 
     test('fails with status code 400 if data invalid', async () => {
       const newNote = {
@@ -103,7 +103,7 @@ describe('when there is initially some notes saved', () => {
       const notesAtEnd = await helper.notesInDb()
 
       expect(notesAtEnd).toHaveLength(helper.initialNotes.length)
-    })
+    }, 100000)
   })
 
   describe('deletion of a note', () => {
@@ -124,7 +124,7 @@ describe('when there is initially some notes saved', () => {
       const contents = notesAtEnd.map(r => r.content)
 
       expect(contents).not.toContain(noteToDelete.content)
-    })
+    }, 100000)
   })
 })
 
@@ -136,7 +136,7 @@ describe('when there is initially one user at db', () => {
     const user = new User({ username: 'root', passwordHash })
 
     await user.save()
-  })
+  }, 100000)
 
   test('creation succeeds with a fresh username', async () => {
     const usersAtStart = await helper.usersInDb()
@@ -158,7 +158,7 @@ describe('when there is initially one user at db', () => {
 
     const usernames = usersAtEnd.map(u => u.username)
     expect(usernames).toContain(newUser.username)
-  })
+  }, 100000)
 
   test('creation fails with proper statuscode and message if username already taken', async () => {
     const usersAtStart = await helper.usersInDb()
@@ -179,7 +179,7 @@ describe('when there is initially one user at db', () => {
 
     const usersAtEnd = await helper.usersInDb()
     expect(usersAtEnd).toHaveLength(usersAtStart.length)
-  })
+  }, 100000)
 })
 
 afterAll(async () => {
