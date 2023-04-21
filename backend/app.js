@@ -1,18 +1,14 @@
 const config = require('./utils/config')
 const express = require('express')
-require('express-async-errors')
-/*
-express-async-errors
-The 'magic' of the library allows us to eliminate the try-catch blocks completely.
-Because of the library, we do not need the next(exception) call anymore. 
-The library handles everything under the hood. If an exception occurs in an async route, the execution is automatically passed to the error handling middleware.
-*/
 const app = express()
 const cors = require('cors')
-const notesRouter = require('./controllers/notes')
-const middleware = require('./utils/middleware')
 const logger = require('./utils/logger')
 const mongoose = require('mongoose')
+require('express-async-errors')
+
+const notesRouter = require('./controllers/notes')
+const usersRouter = require('./controllers/users')
+const middleware = require('./utils/middleware')
 
 mongoose.set('strictQuery', false)
 
@@ -32,6 +28,7 @@ app.use(express.json())
 app.use(middleware.requestLogger)
 
 app.use('/api/notes', notesRouter)
+app.use('/api/users', usersRouter)
 
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
